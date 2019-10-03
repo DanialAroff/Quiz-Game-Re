@@ -31,6 +31,9 @@ class Question {
         return ans.equals(correctAns);
     }
     
+    /**
+     * Shuffle the order of answers
+     */
     public void shuffleAnswers() {
         Collections.shuffle(answers);
     }
