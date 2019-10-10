@@ -1,5 +1,5 @@
 # Quiz-Game-Re
-A quiz game program originally written in C but need to be changed to OO language (Java for this assignement).
+A quiz game program originally written in C but need to be changed to OO language (Java for this assignment).
 
 ## Screenshots
 
