@@ -1,9 +1,7 @@
 
 package quizgamere;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Scanner;
@@ -48,17 +46,15 @@ class Question {
         Collections.shuffle(answers);
     }
     
-    // for testing purposes
+    /**
+     * Prints out the question with choice of answers
+     */
     public void printQuestion() {
         System.out.println(question);
         String[] opt = {"A", "B", "C", "D"};
         for (int i = 0; i < opt.length; i++) {
             System.out.println(opt[i] + ". " + answers.get(i));
         }
-    }
-    // for testing purposes
-    public void print() {
-        System.out.println(answers);
     }
     
     @Override
@@ -68,11 +64,11 @@ class Question {
 } 
 
 public class QuizGame {
-    ArrayList<Question> setOfGameQuestions;
-    ArrayList<Question> setOfWarmupQuestions;
-    float score;
-    String playerName;
-    Scanner in;
+    private ArrayList<Question> setOfGameQuestions;
+    private ArrayList<Question> setOfWarmupQuestions;
+    private float score;
+    private String playerName;
+    private Scanner in;
     
     public QuizGame() {
         setOfGameQuestions = new ArrayList<>();
@@ -80,11 +76,16 @@ public class QuizGame {
         in = new Scanner(System.in, "UTF-8");
         loadQuestion("game_questions.csv", setOfGameQuestions);
         loadQuestion("warmup_questions.csv", setOfWarmupQuestions);
-        System.out.println(setOfWarmupQuestions.size());
+        
+        File file = new File("score.txt");
+        if (!file.isFile()){
+           resetScore();
+        }
     }
     
-    
     public void mainMenu() {
+        Collections.shuffle(setOfGameQuestions);
+        Collections.shuffle(setOfWarmupQuestions);
         System.out.print("\t\t\tJAVA PROGRAM QUIZ GAME\n");
         System.out.print("\n\t\t\t   WELCOME ");
         System.out.print("\n\t\t\t      to ");
@@ -102,15 +103,28 @@ public class QuizGame {
         System.out.print("\n\t\t________________________________________\n\n"); 
  
         String input = in.next();
-        // initiate game
+        // to start the game
         if (input.equalsIgnoreCase("S")) {
-            startGame();
+            startWarmupGame();
         }
+        // to view the highest score
         else if (input.equalsIgnoreCase("V")) {
-            
+            try {
+                Scanner s = new Scanner(new File("score.txt"), "UTF-8");
+                String name = s.nextLine();
+                float scr = Float.valueOf(s.next());
+                System.out.print("\n\n\n\n\t\t*************************************************************\n");
+                System.out.printf("\t\t %s has secured the Highest Score %.2f", name, scr);
+                System.out.print("\n\t\t*************************************************************\n\n\n\n");
+            } catch (FileNotFoundException ex) {}
+            try {
+                System.in.read();
+            } catch (IOException e) {} 
+            mainMenu();
         }
         else if (input.equalsIgnoreCase("R")) {
-            
+            resetScore();
+            mainMenu();
         }
         // prints HELP section
         else if (input.equalsIgnoreCase("H")) {
@@ -133,14 +147,14 @@ public class QuizGame {
             System.out.println(" ");
             System.out.print("\n\n\t*****C PROGRAM QUIZ GAME is developed by CODE WITH C TEAM********");
             System.out.println("\n\tPress any key to return to the main menu!");
-            if (in.hasNext()) {
-                in = new Scanner(System.in, "UTF-8");
-                mainMenu();
-            }
+            try {
+                System.in.read();
+            } catch (IOException e) {} 
+            mainMenu();
         }
         else if (input.equalsIgnoreCase("Q")) System.exit(0);
     }  
-    private void startGame() {
+    private void startWarmupGame() {
         System.out.print("\n\n\n\n\n\n\n\n\n\t\t\tRegister your name: ");
         in.nextLine();
         playerName = in.nextLine();
@@ -181,16 +195,15 @@ public class QuizGame {
                 else {
                     System.out.println("\nWrong!!! The correct answer is " + q.correctAns + "\n");
                 }
-                setOfWarmupQuestions.remove(i);
             }
             if (count >= 2) {
                 System.out.printf("%n%n\t*** CONGRATULATIONS %s you are eligible to play the Game ***", playerName);
-                System.out.print("\n\n\n\tPress Enter key to Start the Game!\n");
+                System.out.print("\n\n\n\tPress any key to Start the Game!\n");
                 try {
                     System.in.read();
                 }
                 catch (IOException e) {}   
-                startGame2();
+                startGame();
             }
             else {
                 System.out.print("\n\nSORRY YOU ARE NOT ELIGIBLE TO PLAY THIS GAME, BETTER LUCK NEXT TIME");
@@ -202,7 +215,7 @@ public class QuizGame {
             }
         }    
     }
-    private void startGame2() {
+    private void startGame() {
         for (int i = 0; i < 10; i++) {
             Question q = setOfGameQuestions.get(i);
             q.printQuestion();
@@ -216,7 +229,6 @@ public class QuizGame {
                 System.out.println("\nWrong!!! The correct answer is " + q.correctAns + "\n");
                 break;
             }
-            setOfGameQuestions.remove(i);
         }
         if (score > 0 && score < 1000000) {
             System.out.print("\n\n\t\t**************** CONGRATULATIONS *****************");
@@ -228,7 +240,8 @@ public class QuizGame {
             System.out.printf("%n\t\t\t\tYou won $%.2f", score);
             System.out.println("\t\tThank You!!");
         }
-        
+        updateScore();
+        score = 0; // reset score fot next game
         System.out.println("\n\nPress Y if you want to play next game");
         System.out.println("Press any key if you want to go main menu");
         try {
@@ -237,8 +250,28 @@ public class QuizGame {
         catch (IOException e) {} 
         mainMenu();
     }    
-    public void viewScore() {
-        
+    private void updateScore() {
+        try {
+            FileWriter w = new FileWriter("score.txt");
+            FileReader r = new FileReader("score.txt");
+            r.read();
+            float recorded_score = Float.valueOf(r.read());
+            if (score >= recorded_score) {
+                w.write(playerName);
+                w.write(String.format("%n"));
+                w.write(String.valueOf(score));
+                w.close();
+            }
+        } catch (IOException ex) {}
+    }
+    private void resetScore() {
+        try {  
+            FileWriter w = new FileWriter("score.txt");
+            w.write("NO_ONE");
+            w.write(String.format("%n"));
+            w.write("0.00");
+            w.close();
+        } catch (IOException ex){}
     }
     private void loadQuestion(String questionfile, ArrayList questionlist) {
         String question = "";
@@ -270,7 +303,6 @@ public class QuizGame {
         } catch (FileNotFoundException ex) {
             Logger.getLogger(QuizGame.class.getName()).log(Level.SEVERE, null, ex);
         }
-        Collections.shuffle(questionlist);
     }
     
     public static void main(String[] args) {
